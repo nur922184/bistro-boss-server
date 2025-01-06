@@ -44,7 +44,7 @@ async function run() {
                 return res.status(401).send({ massage: 'unauthorized access' })
             }
             const token = req.headers.authorization.split(' ')[1];
-            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,(err, decoded) => {
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
                 if (err) {
                     return res.status(401).send({ massage: 'unauthorized access' })
                 }
@@ -54,12 +54,12 @@ async function run() {
         }
 
 
-        const verifyAdmin = async(req, res, next) =>{
+        const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
-            const query = {email: email}; 
+            const query = { email: email };
             const user = await userCollection.findOne(query);
-            const isAdmin = user?.role=== 'admin';
-            if(!isAdmin){
+            const isAdmin = user?.role === 'admin';
+            if (!isAdmin) {
                 return res.status(403).send({ massage: 'forbidden access' })
             }
             next();
@@ -67,18 +67,18 @@ async function run() {
         }
 
 
-        app.get('/user/admin/:email', verifyToken , async (req, res) => {
-            const email = req.params.email; 
-            if(email !==  req.decoded.email){
+        app.get('/user/admin/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
                 return res.status(403).send({ massage: 'forbidden access' })
             }
-            const query = {email: email}; 
-            const user  = await userCollection.findOne(query); 
-            let admin = false; 
-            if(user){
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            let admin = false;
+            if (user) {
                 admin = user?.role === "admin"
             }
-            res.send({admin})
+            res.send({ admin })
         })
 
         //jwt related api 
@@ -138,11 +138,31 @@ async function run() {
             res.send(result)
         })
         app.get('/menu/:id', async (req, res) => {
-            const id =req.params.id; 
-            const query =  { _id: new ObjectId(id) }
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
             const result = await MenuCollection.findOne(query);
-            res.send(result)
+            res.send(result);
         })
+
+
+        app.patch('/menu/:id', async (req, res) => {
+            const item = req.body;
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    name: item.name,
+                    category: item.category,
+                    price: item.price,
+                    recipe: item.recipe,
+                    image: item.image
+                }
+            }
+
+            const result = await MenuCollection.updateOne(filter, updatedDoc)
+            res.send(result);
+        })
+
 
         app.post('/menu', verifyToken, verifyAdmin, async (req, res) => {
             const item = req.body
